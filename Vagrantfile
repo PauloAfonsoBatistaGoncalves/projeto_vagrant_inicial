@@ -6,16 +6,25 @@ SCRIPT
 
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/bionic64"
-  config.vm.network "forwarded_port", guest: 80, host: 8089
-  #config.vm.network "private_network", ip: "192.168.56.2"
-  #config.vm.network "private_network", type: "dhcp"
-  config.vm.network "public_network", bridge: "wlp5s0", ip: "192.168.101.15"
-  config.vm.provision "shell",
-      inline: "cat /configs/public_key/vagrant-key.pub >> .ssh/authorized_keys"
-  config.vm.provision "shell", inline: $script_mysql
-  config.vm.provision "shell",
-      inline: "cat /configs/mysqld.cnf >> /etc/mysql/mysql.conf.d/mysqld.cnf"
-  config.vm.provision "shell",
-      inline: "service mysql restart"
-  config.vm.synced_folder "./configs", "/configs"
+  
+  config.vm.define "mysqldb" do |mysql|
+      mysql.vm.network "public_network", bridge: "wlp5s0", ip: "192.168.101.15"
+      mysql.vm.provision "shell",
+          inline: "cat /configs/public_key/vagrant-key.pub >> .ssh/authorized_keys"
+      mysql.vm.provision "shell", inline: $script_mysql
+      mysql.vm.provision "shell",
+          inline: "cat /configs/mysqld.cnf >> /etc/mysql/mysql.conf.d/mysqld.cnf"
+      mysql.vm.provision "shell",
+          inline: "service mysql restart"
+      mysql.vm.synced_folder "./configs", "/configs"
+  end
+
+  config.vm.define "phpweb" do |phpweb|
+      phpweb.vm.network "forwarded_port", guest: 80, host: 8089
+      phpweb.vm.network "public_network", bridge: "wlp5s0", ip: "192.168.101.16"
+      phpweb.vm.provision "shell",
+          inline: "sudo apt-get update"
+    phpweb.vm.provision "shell",
+          inline: "sudo apt-get install -y puppet"
+  end
 end
