@@ -1,7 +1,8 @@
 
 # General
 .vagrant/
-configs/
+configs/private_key/
+configs/public_key/
 
 # Log files (if you are creating logs in debug mode, uncomment this)
 *.log

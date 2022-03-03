@@ -20,11 +20,41 @@ Vagrant.configure("2") do |config|
   end
 
   config.vm.define "phpweb" do |phpweb|
-      phpweb.vm.network "forwarded_port", guest: 80, host: 8089
+      phpweb.vm.network "forwarded_port", guest: 8888, host: 8888
       phpweb.vm.network "public_network", bridge: "wlp5s0", ip: "192.168.101.16"
       phpweb.vm.provision "shell",
-          inline: "sudo apt-get update"
-    phpweb.vm.provision "shell",
-          inline: "sudo apt-get install -y puppet"
+          inline: "apt-get update && apt-get install -y puppet"
+      
+      phpweb.vm.provision "puppet" do |puppet|
+          puppet.manifests_path = "./configs/manifests"
+          puppet.manifest_file = "phpweb.pp"
+      end
   end
+
+  config.vm.define "mysqlserver" do |mysqlserver|
+      mysqlserver.vm.network "public_network", bridge: "wlp5s0", ip: "192.168.101.17"
+      mysqlserver.vm.synced_folder "./configs", "/configs"
+      mysqlserver.vm.provision "shell",
+          inline: "cat /configs/public_key/vagrant-key.pub >> .ssh/authorized_keys"
+  end
+   
+  config.vm.define "ansible" do |ansible|
+      ansible.vm.network "public_network", bridge: "wlp5s0", ip: "192.168.101.18"
+      ansible.vm.synced_folder "./configs", "/configs"
+      ansible.vm.provision "shell",
+          inline: "cat /configs/public_key/vagrant-key.pub >> .ssh/authorized_keys"
+      ansible.vm.provision "shell",
+          inline: "cp /configs/private_key/vagrant-key /home/vagrant && \
+                    chmod 600 /home/vagrant/vagrant-key && \
+                    chown vagrant:vagrant /home/vagrant/vagrant-key"
+      ansible.vm.provision "shell",
+          inline: "apt-get update && \
+                   apt install -y software-properties-common && \
+                   add-apt-repository --yes --update ppa:ansible/ansible && \
+                   apt install ansible -y"
+     ansible.vm.provision "shell",
+          inline: "ansible-playbook -i  /vagrant/configs/ansible/hosts \
+                   /vagrant/configs/ansible/playbook.yaml"
+  end
+  
 end
