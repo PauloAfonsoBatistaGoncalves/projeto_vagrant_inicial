@@ -6,6 +6,11 @@ SCRIPT
 
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/bionic64"
+
+  config.vm.provider "virtualbox" do |vb|
+    vb.memory = 512
+    vb.cpus = 1
+  end
   
   config.vm.define "mysqldb" do |mysql|
       mysql.vm.network "public_network", bridge: "wlp5s0", ip: "192.168.101.15"
@@ -28,6 +33,11 @@ Vagrant.configure("2") do |config|
       phpweb.vm.provision "puppet" do |puppet|
           puppet.manifests_path = "./configs/manifests"
           puppet.manifest_file = "phpweb.pp"
+      end
+      
+      phpweb.vm.provider "virtualbox" do |vb|
+        vb.memory = 1024
+        vb.cpus = 2
       end
   end
 
@@ -56,5 +66,12 @@ Vagrant.configure("2") do |config|
           inline: "ansible-playbook -i  /vagrant/configs/ansible/hosts \
                    /vagrant/configs/ansible/playbook.yaml"
   end
-  
+
+  config.vm.define "memcached" do |memcached|
+    memcached.vm.box = "centos/7"
+    memcached.vm.provider "virtualbox" do |vb|
+        vb.memory = 1024
+        vb.cpus = 2
+    end
+  end
 end
